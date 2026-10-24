@@ -45,7 +45,7 @@ jobs:
 
       - name: Tag Allure results
         if: always()
-        run: scripts/tag-allure-results.sh target/allure-results api
+        run: bash scripts/tag-allure-results.sh target/allure-results api
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -90,7 +90,7 @@ jobs:
           appium driver list --installed
 
       - name: Download app under test
-        run: scripts/download-apps.sh android
+        run: bash scripts/download-apps.sh android
 
       - name: Resolve Maven dependencies
         run: mvn -B -q test-compile
@@ -98,7 +98,7 @@ jobs:
       - name: Start Appium server
         run: |
           nohup appium --address 127.0.0.1 --port 4723 --log-timestamp --log appium.log > /dev/null 2>&1 &
-          scripts/wait-for-appium.sh
+          bash scripts/wait-for-appium.sh
 
       - name: Run tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -113,7 +113,7 @@ jobs:
 
       - name: Tag Allure results
         if: always()
-        run: scripts/tag-allure-results.sh target/allure-results android-${{ matrix.api-level }}
+        run: bash scripts/tag-allure-results.sh target/allure-results android-${{ matrix.api-level }}
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -155,10 +155,10 @@ jobs:
           appium --version
 
       - name: Download app under test
-        run: scripts/download-apps.sh ios
+        run: bash scripts/download-apps.sh ios
 
       - name: Boot iPhone simulator
-        run: scripts/boot-ios-simulator.sh
+        run: bash scripts/boot-ios-simulator.sh
 
       - name: Resolve Maven dependencies
         run: mvn -B -q test-compile
@@ -166,14 +166,14 @@ jobs:
       - name: Start Appium server
         run: |
           nohup appium --address 127.0.0.1 --port 4723 --log-timestamp --log appium.log > /dev/null 2>&1 &
-          scripts/wait-for-appium.sh
+          bash scripts/wait-for-appium.sh
 
       - name: Run tests on simulator
         run: mvn -B test -Pios -Dretry.count=${RETRY_COUNT}
 
       - name: Tag Allure results
         if: always()
-        run: scripts/tag-allure-results.sh target/allure-results ios-${IOS_PLATFORM_VERSION:-sim}
+        run: bash scripts/tag-allure-results.sh target/allure-results ios-${IOS_PLATFORM_VERSION:-sim}
 
       - uses: actions/upload-artifact@v4
         if: always()
