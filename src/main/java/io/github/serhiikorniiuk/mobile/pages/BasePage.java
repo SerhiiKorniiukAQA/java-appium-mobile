@@ -99,7 +99,15 @@ public abstract class BasePage {
             return true; // nothing to compare with
         }
         boolean masked = !expected.isEmpty() && actual.chars().allMatch(c -> c == '\u2022');
-        return masked ? actual.length() == expected.length() : actual.equals(expected) || expected.isEmpty();
+        if (masked) {
+            return actual.length() == expected.length();
+        }
+        // input masks may reformat the value, e.g. card number "4111111111111111" -> "4111 1111 1111 1111"
+        return expected.isEmpty() || withoutSpaces(actual).equals(withoutSpaces(expected));
+    }
+
+    private static String withoutSpaces(String value) {
+        return value.replaceAll("\\s", "");
     }
 
     /** Scrolls down until the element is visible, then taps it. Useful for long forms. */
