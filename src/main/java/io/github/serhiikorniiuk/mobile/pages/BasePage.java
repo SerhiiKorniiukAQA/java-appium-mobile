@@ -133,7 +133,9 @@ public abstract class BasePage {
      * exposed on the element itself.
      */
     protected String textOf(By locator) {
-        return textOf(waitVisible(locator));
+        // React Native re-renders counters/badges on update -> re-find the element on stale reference
+        return wait.ignoring(StaleElementReferenceException.class)
+                .until(d -> textOf(waitVisible(locator)));
     }
 
     protected String textOf(WebElement element) {

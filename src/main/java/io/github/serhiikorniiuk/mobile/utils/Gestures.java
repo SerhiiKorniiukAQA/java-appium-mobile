@@ -29,6 +29,16 @@ public final class Gestures {
         drag(driver, from, to, Duration.ofMillis(600));
     }
 
+    /** Single finger tap at screen coordinates. */
+    public static void tap(AppiumDriver driver, Point point) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence tap = new Sequence(finger, 1)
+                .addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), point.getX(), point.getY()))
+                .addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()))
+                .addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(List.of(tap));
+    }
+
     public static void drag(AppiumDriver driver, Point from, Point to, Duration duration) {
         PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
         Sequence swipe = new Sequence(finger, 1)

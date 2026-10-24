@@ -4,6 +4,9 @@ import io.appium.java_client.AppiumDriver;
 import io.github.serhiikorniiuk.mobile.config.Config;
 import io.github.serhiikorniiuk.mobile.driver.DriverManager;
 import io.qameta.allure.Step;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.Point;
 
 import java.util.Map;
 
@@ -73,7 +76,20 @@ public final class MobileActions {
                 driver().executeScript("mobile: hideKeyboard", Map.of());
             }
         } catch (RuntimeException ignored) {
-            // keyboard is not shown - nothing to hide
+            // keyboard is not shown or has no such key
+        }
+        if (DriverManager.isIos() && isIosKeyboardShown()) {
+            // Number pad (card number, CVV) has no Return key: tap an empty area above the form
+            Dimension size = driver().manage().window().getSize();
+            Gestures.tap(driver(), new Point(size.getWidth() / 2, (int) (size.getHeight() * 0.12)));
+        }
+    }
+
+    private static boolean isIosKeyboardShown() {
+        try {
+            return !driver().findElements(By.className("XCUIElementTypeKeyboard")).isEmpty();
+        } catch (RuntimeException e) {
+            return false;
         }
     }
 
