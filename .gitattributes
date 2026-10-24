@@ -1,0 +1,5 @@
+# Normalize line endings; shell scripts must stay LF even when committed from Windows
+* text=auto
+*.sh text eol=lf
+*.yml text eol=lf
+*.java text eol=lf

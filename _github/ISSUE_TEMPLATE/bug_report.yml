@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a defect found in the app or in the test framework
+title: "[Platform][Area] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: [Blocker, Critical, Major, Minor, Trivial]
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options: [Android, iOS, API, Test framework / CI]
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: App build, device, OS version, network, user
+      placeholder: |
+        App: My Demo App RN 1.3.0
+        Device: Pixel 6 emulator
+        OS: Android 14 (API 34)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options: [Always, Intermittent, Once]
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, video, Allure link, Appium / logcat / Xcode logs, related test case ID

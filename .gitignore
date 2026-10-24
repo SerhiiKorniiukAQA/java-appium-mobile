@@ -1,0 +1,18 @@
+# Build
+target/
+allure-results/
+allure-report/
+
+# Apps under test are downloaded by scripts/download-apps.sh
+apps/*
+!apps/.gitkeep
+
+# Logs
+*.log
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- One emulator = one Appium session at a time, so the suite runs sequentially -->
+<suite name="Android" verbose="1">
+    <listeners>
+        <listener class-name="io.github.serhiikorniiuk.mobile.listeners.RetryListener"/>
+    </listeners>
+    <test name="Android - UI, E2E, platform">
+        <groups>
+            <run>
+                <exclude name="ios-only"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="io.github.serhiikorniiuk.mobile.ui"/>
+            <package name="io.github.serhiikorniiuk.mobile.e2e"/>
+            <package name="io.github.serhiikorniiuk.mobile.platform"/>
+        </packages>
+    </test>
+</suite>
