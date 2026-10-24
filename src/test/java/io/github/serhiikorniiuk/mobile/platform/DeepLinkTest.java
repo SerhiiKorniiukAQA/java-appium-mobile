@@ -12,6 +12,7 @@ import io.qameta.allure.SeverityLevel;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static io.github.serhiikorniiuk.mobile.base.Checks.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Epic("Platform specifics")
@@ -32,8 +33,10 @@ public class DeepLinkTest extends BaseMobileTest {
         MobileActions.openDeepLink(deepLink("product-details/" + productId));
 
         ProductDetailsPage product = new ProductDetailsPage();
-        assertThat(product.isOpened()).as("Product screen opened by deep link").isTrue();
-        assertThat(product.price()).as("Product price").isPositive();
+        verify("product screen is opened by deep link", () ->
+                assertThat(product.isOpened()).isTrue());
+        verify("product price is shown", () ->
+                assertThat(product.price()).isPositive());
     }
 
     @Test(groups = "regression", description = "TC-PLAT-004: Deep link opens empty cart")
@@ -44,8 +47,10 @@ public class DeepLinkTest extends BaseMobileTest {
         MobileActions.openDeepLink(deepLink("cart"));
 
         CartPage cart = new CartPage();
-        assertThat(cart.isOpened() || cart.isEmpty()).as("Cart screen opened by deep link").isTrue();
-        assertThat(cart.productRowsCount()).as("Rows in new user's cart").isZero();
+        verify("cart screen is opened by deep link", () ->
+                assertThat(cart.isOpened() || cart.isEmpty()).isTrue());
+        verify("new user's cart is empty", () ->
+                assertThat(cart.productRowsCount()).isZero());
     }
 
     @Test(groups = "regression", description = "TC-PLAT-005: Deep link opens login screen")
@@ -55,6 +60,7 @@ public class DeepLinkTest extends BaseMobileTest {
 
         MobileActions.openDeepLink(deepLink("login"));
 
-        assertThat(new LoginPage().isOpened()).as("Login screen opened by deep link").isTrue();
+        verify("login screen is opened by deep link", () ->
+                assertThat(new LoginPage().isOpened()).isTrue());
     }
 }

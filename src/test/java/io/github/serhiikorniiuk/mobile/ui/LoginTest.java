@@ -11,6 +11,7 @@ import io.qameta.allure.SeverityLevel;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static io.github.serhiikorniiuk.mobile.base.Checks.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Epic("Mobile UI")
@@ -22,13 +23,16 @@ public class LoginTest extends BaseMobileTest {
     @Severity(SeverityLevel.BLOCKER)
     public void validLogin() {
         LoginPage login = catalog().header.openLogin();
-        assertThat(login.isOpened()).as("Login screen is opened").isTrue();
+        verify("login screen is opened", () ->
+                assertThat(login.isOpened()).isTrue());
 
         login.loginAs(User.STANDARD);
 
         CatalogPage catalog = new CatalogPage();
-        assertThat(catalog.isOpened()).as("User is redirected to catalog").isTrue();
-        assertThat(catalog.header.isLogoutAvailable()).as("'Log Out' is available in menu").isTrue();
+        verify("user is redirected to catalog", () ->
+                assertThat(catalog.isOpened()).isTrue());
+        verify("'Log Out' is available in menu", () ->
+                assertThat(catalog.header.isLogoutAvailable()).isTrue());
     }
 
     @DataProvider(name = "invalidCredentials")
@@ -49,7 +53,9 @@ public class LoginTest extends BaseMobileTest {
 
         login.submit(username, password);
 
-        assertThat(login.isOpened()).as(caseId + ": user stays on login screen").isTrue();
-        assertThat(login.anyError()).as(caseId + ": validation message").containsIgnoringCase(expectedError);
+        verify(caseId + ": user stays on login screen", () ->
+                assertThat(login.isOpened()).isTrue());
+        verify(caseId + ": message contains '" + expectedError + "'", () ->
+                assertThat(login.anyError()).containsIgnoringCase(expectedError));
     }
 }

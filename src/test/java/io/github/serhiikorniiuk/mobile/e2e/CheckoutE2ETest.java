@@ -18,6 +18,7 @@ import io.qameta.allure.Severity;
 import io.qameta.allure.SeverityLevel;
 import org.testng.annotations.Test;
 
+import static io.github.serhiikorniiuk.mobile.base.Checks.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Epic("End-to-End")
@@ -29,35 +30,48 @@ public class CheckoutE2ETest extends BaseMobileTest {
     @Severity(SeverityLevel.BLOCKER)
     public void guestCompletesPurchase() {
         Address address = TestDataFactory.address();
+        Allure.parameter("Shipping name", address.fullName());
+        Allure.parameter("City", address.city());
 
-        Allure.step("Add product to cart", () ->
+        Allure.step("1. Add product to cart", () ->
                 catalog().openProduct(0).addToCart());
 
-        Allure.step("Open cart and proceed to checkout", () -> {
+        Allure.step("2. Open cart and proceed to checkout", () -> {
             CartPage cart = new CatalogPage().header.openCart();
-            assertThat(cart.productRowsCount()).isEqualTo(1);
+            verify("cart contains 1 product", () -> assertThat(cart.productRowsCount()).isEqualTo(1));
             cart.proceedToCheckout();
         });
 
-        Allure.step("Log in when checkout requires authentication", () -> {
+        Allure.step("3. Log in when checkout requires authentication", () -> {
             LoginPage login = new LoginPage();
-            assertThat(login.isOpened()).as("Checkout asks guest to log in").isTrue();
+            verify("checkout asks guest to log in", () -> assertThat(login.isOpened()).isTrue());
             login.loginAs(User.STANDARD);
         });
 
-        CheckoutAddressPage addressPage = new CheckoutAddressPage();
-        assertThat(addressPage.isOpened()).as("Shipping address screen").isTrue();
-        CheckoutPaymentPage payment = addressPage.fill(address).toPayment();
+        Allure.step("4. Enter shipping address", () -> {
+            CheckoutAddressPage addressPage = new CheckoutAddressPage();
+            verify("shipping address screen is opened", () -> assertThat(addressPage.isOpened()).isTrue());
+            addressPage.fill(address).toPayment();
+        });
 
-        assertThat(payment.isOpened()).as("Payment screen").isTrue();
-        CheckoutReviewPage review = payment.fill(TestDataFactory.card(address.fullName())).reviewOrder();
+        Allure.step("5. Enter payment method", () -> {
+            CheckoutPaymentPage payment = new CheckoutPaymentPage();
+            verify("payment screen is opened", () -> assertThat(payment.isOpened()).isTrue());
+            payment.fill(TestDataFactory.card(address.fullName())).reviewOrder();
+        });
 
-        assertThat(review.isOpened()).as("Review order screen").isTrue();
-        CheckoutCompletePage complete = review.placeOrder();
+        Allure.step("6. Review and place order", () -> {
+            CheckoutReviewPage review = new CheckoutReviewPage();
+            verify("review order screen is opened", () -> assertThat(review.isOpened()).isTrue());
+            review.placeOrder();
+        });
 
-        assertThat(complete.isOpened()).as("Order confirmation screen").isTrue();
-        CatalogPage catalog = complete.continueShopping();
-        assertThat(catalog.isOpened()).as("Back to catalog").isTrue();
-        assertThat(catalog.header.cartBadgeCount()).as("Cart is cleared after order").isZero();
+        Allure.step("7. Confirm order and return to catalog", () -> {
+            CheckoutCompletePage complete = new CheckoutCompletePage();
+            verify("order confirmation screen is shown", () -> assertThat(complete.isOpened()).isTrue());
+            CatalogPage catalog = complete.continueShopping();
+            verify("user is back on catalog", () -> assertThat(catalog.isOpened()).isTrue());
+            verify("cart is cleared after order", () -> assertThat(catalog.header.cartBadgeCount()).isZero());
+        });
     }
 }

@@ -7,6 +7,7 @@ import io.github.serhiikorniiuk.mobile.pages.CatalogPage;
 import io.github.serhiikorniiuk.mobile.pages.GeoLocationPage;
 import io.github.serhiikorniiuk.mobile.utils.MobileActions;
 import io.github.serhiikorniiuk.mobile.utils.MobileActions.AppState;
+import io.qameta.allure.Allure;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Severity;
@@ -16,6 +17,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.Test;
 
+import static io.github.serhiikorniiuk.mobile.base.Checks.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -41,11 +43,14 @@ public class AndroidPlatformTest extends BaseMobileTest {
         MobileActions.openDeepLink(deepLink("geo-locations"));
 
         GeoLocationPage geo = new GeoLocationPage();
-        assertThat(geo.isOpened()).as("Geo location screen").isTrue();
-        new WebDriverWait(DriverManager.driver(), Config.timeout())
-                .until(d -> geo.latitude().startsWith("50.45"));
-        assertThat(geo.latitude()).as("Latitude").startsWith("50.45");
-        assertThat(geo.longitude()).as("Longitude").startsWith("30.52");
+        verify("geo location screen is opened", () ->
+                assertThat(geo.isOpened()).isTrue());
+        verify("coordinates of Kyiv are shown (50.45, 30.52)", () -> {
+            new WebDriverWait(DriverManager.driver(), Config.timeout())
+                    .until(d -> geo.latitude().startsWith("50.45"));
+            assertThat(geo.latitude()).startsWith("50.45");
+            assertThat(geo.longitude()).startsWith("30.52");
+        });
     }
 
     @Test(groups = {"regression", "android-only"},
@@ -55,12 +60,16 @@ public class AndroidPlatformTest extends BaseMobileTest {
         catalog();
 
         MobileActions.openNotifications();
-        new WebDriverWait(DriverManager.driver(), Config.timeout())
-                .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@package='com.android.systemui']")));
+        verify("notification shade is shown over the app", () ->
+                new WebDriverWait(DriverManager.driver(), Config.timeout())
+                        .until(ExpectedConditions.presenceOfElementLocated(
+                                By.xpath("//*[@package='com.android.systemui']"))));
 
-        DriverManager.driver().navigate().back();
+        Allure.step("Close notification shade with Back", () -> DriverManager.driver().navigate().back());
 
-        assertThat(MobileActions.appState()).isEqualTo(AppState.RUNNING_IN_FOREGROUND);
-        assertThat(new CatalogPage().isOpened()).as("Catalog is shown after closing shade").isTrue();
+        verify("app is in foreground", () ->
+                assertThat(MobileActions.appState()).isEqualTo(AppState.RUNNING_IN_FOREGROUND));
+        verify("catalog is shown after closing the shade", () ->
+                assertThat(new CatalogPage().isOpened()).isTrue());
     }
 }

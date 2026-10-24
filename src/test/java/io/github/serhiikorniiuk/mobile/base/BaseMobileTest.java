@@ -1,27 +1,37 @@
 package io.github.serhiikorniiuk.mobile.base;
 
-import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidStartScreenRecordingOptions;
+import io.appium.java_client.screenrecording.CanRecordScreen;
 import io.github.serhiikorniiuk.mobile.config.Config;
 import io.github.serhiikorniiuk.mobile.driver.DriverManager;
 import io.github.serhiikorniiuk.mobile.pages.CatalogPage;
-import io.qameta.allure.Allure;
-import org.openqa.selenium.OutputType;
+import io.github.serhiikorniiuk.mobile.utils.Evidence;
+import io.qameta.allure.Step;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Base64;
 
 /**
  * One Appium session per test: every test starts from a clean app state
  * (noReset=false), so tests are independent and can run in any order.
+ * <p>
+ * Evidence in the Allure report:
+ * <ul>
+ *     <li>every step - compressed screenshot ({@code StepScreenshotListener})</li>
+ *     <li>failed test - full-size screenshot, page source, screen recording (Android)</li>
+ * </ul>
  */
 public abstract class BaseMobileTest {
+
+    private boolean recording;
 
     @BeforeMethod(alwaysRun = true)
     public void startSession() {
         DriverManager.start();
+        startScreenRecording();
     }
 
     @AfterMethod(alwaysRun = true)
@@ -30,14 +40,20 @@ public abstract class BaseMobileTest {
             return;
         }
         try {
+            byte[] video = stopScreenRecording();
             if (!result.isSuccess()) {
-                attachFailureEvidence();
+                Evidence.attachFullScreenshot("Screenshot on failure");
+                Evidence.attachPageSource();
+                if (video.length > 0) {
+                    Evidence.attachVideo("Screen recording", video);
+                }
             }
         } finally {
             DriverManager.quit();
         }
     }
 
+    @Step("Launch app on catalog screen")
     protected CatalogPage catalog() {
         return new CatalogPage().waitOpened();
     }
@@ -46,20 +62,38 @@ public abstract class BaseMobileTest {
         return Config.deepLinkScheme() + path;
     }
 
-    private void attachFailureEvidence() {
-        AppiumDriver driver = DriverManager.driver();
-        try {
-            byte[] png = driver.getScreenshotAs(OutputType.BYTES);
-            Allure.addAttachment("Screenshot on failure", "image/png", new ByteArrayInputStream(png), "png");
-        } catch (RuntimeException e) {
-            Allure.addAttachment("Screenshot error", e.toString());
+    /**
+     * Android emulators record with the built-in screenrecord tool. iOS recording needs
+     * ffmpeg on the runner, so iOS relies on per-step screenshots instead.
+     */
+    private void startScreenRecording() {
+        recording = false;
+        boolean enabled = Boolean.parseBoolean(Config.optional("allure.video.on.failure").orElse("true"));
+        if (!enabled || !DriverManager.isAndroid()) {
+            return;
         }
         try {
-            String source = driver.getPageSource();
-            Allure.addAttachment("Page source", "text/xml",
-                    new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)), "xml");
+            ((CanRecordScreen) DriverManager.driver()).startRecordingScreen(
+                    AndroidStartScreenRecordingOptions.startScreenRecordingOptions()
+                            .withTimeLimit(Duration.ofMinutes(3))
+                            .withBitRate(1_000_000));
+            recording = true;
         } catch (RuntimeException e) {
-            Allure.addAttachment("Page source error", e.toString());
+            // recording is optional evidence
+        }
+    }
+
+    private byte[] stopScreenRecording() {
+        if (!recording) {
+            return new byte[0];
+        }
+        try {
+            String base64 = ((CanRecordScreen) DriverManager.driver()).stopRecordingScreen();
+            return base64 == null ? new byte[0] : Base64.getMimeDecoder().decode(base64);
+        } catch (RuntimeException e) {
+            return new byte[0];
+        } finally {
+            recording = false;
         }
     }
 }

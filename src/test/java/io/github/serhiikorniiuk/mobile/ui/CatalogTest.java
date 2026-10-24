@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static io.github.serhiikorniiuk.mobile.base.Checks.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Epic("Mobile UI")
@@ -24,9 +25,12 @@ public class CatalogTest extends BaseMobileTest {
     public void catalogShowsProducts() {
         CatalogPage catalog = catalog();
 
-        assertThat(catalog.visibleProductsCount()).as("Visible products").isPositive();
-        assertThat(catalog.visibleProductTitles()).as("Product titles").allSatisfy(t -> assertThat(t).isNotBlank());
-        assertThat(catalog.visibleProductPrices()).as("Product prices").allSatisfy(p -> assertThat(p).isPositive());
+        verify("products are displayed", () ->
+                assertThat(catalog.visibleProductsCount()).isPositive());
+        verify("every product has a title", () ->
+                assertThat(catalog.visibleProductTitles()).allSatisfy(t -> assertThat(t).isNotBlank()));
+        verify("every product has a positive price", () ->
+                assertThat(catalog.visibleProductPrices()).allSatisfy(p -> assertThat(p).isPositive()));
     }
 
     @Test(groups = "regression", description = "TC-CAT-002: Sort by price ascending")
@@ -34,7 +38,8 @@ public class CatalogTest extends BaseMobileTest {
     public void sortByPriceAscending() {
         List<BigDecimal> prices = catalog().sortBy(CatalogPage.Sort.PRICE_ASC).visibleProductPrices();
 
-        assertThat(prices).as("Prices after sort").hasSizeGreaterThan(1).isSorted();
+        verify("prices are in ascending order " + prices, () ->
+                assertThat(prices).hasSizeGreaterThan(1).isSorted());
     }
 
     @Test(groups = "regression", description = "TC-CAT-003: Sort by name descending")
@@ -42,9 +47,9 @@ public class CatalogTest extends BaseMobileTest {
     public void sortByNameDescending() {
         List<String> titles = catalog().sortBy(CatalogPage.Sort.NAME_DESC).visibleProductTitles();
 
-        assertThat(titles).as("Titles after sort")
-                .hasSizeGreaterThan(1)
-                .isSortedAccordingTo(String.CASE_INSENSITIVE_ORDER.reversed());
+        verify("titles are in Z-A order " + titles, () ->
+                assertThat(titles).hasSizeGreaterThan(1)
+                        .isSortedAccordingTo(String.CASE_INSENSITIVE_ORDER.reversed()));
     }
 
     @Test(groups = "regression", description = "TC-CAT-004: Product details price matches catalog price")
@@ -55,9 +60,12 @@ public class CatalogTest extends BaseMobileTest {
 
         ProductDetailsPage details = catalog.openProduct(0);
 
-        assertThat(details.isOpened()).as("Product screen is opened").isTrue();
-        assertThat(details.price()).as("Price on details").isEqualByComparingTo(catalogPrice);
-        assertThat(details.quantity()).as("Default quantity").isEqualTo(1);
+        verify("product screen is opened", () ->
+                assertThat(details.isOpened()).isTrue());
+        verify("price on details equals catalog price " + catalogPrice, () ->
+                assertThat(details.price()).isEqualByComparingTo(catalogPrice));
+        verify("default quantity is 1", () ->
+                assertThat(details.quantity()).isEqualTo(1));
     }
 
     @Test(groups = "regression", description = "TC-CAT-005: Catalog list is scrollable to the last product")
@@ -68,8 +76,7 @@ public class CatalogTest extends BaseMobileTest {
 
         String lastTitle = catalog.scrollToLastProductTitle();
 
-        assertThat(lastTitle).as("Last product after scroll is a new, previously hidden item")
-                .isNotBlank()
-                .isNotIn(initiallyVisible);
+        verify("product hidden on the first screen is shown: " + lastTitle, () ->
+                assertThat(lastTitle).isNotBlank().isNotIn(initiallyVisible));
     }
 }

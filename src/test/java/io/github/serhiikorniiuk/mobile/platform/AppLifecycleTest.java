@@ -11,6 +11,7 @@ import io.qameta.allure.Severity;
 import io.qameta.allure.SeverityLevel;
 import org.testng.annotations.Test;
 
+import static io.github.serhiikorniiuk.mobile.base.Checks.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Epic("Platform specifics")
@@ -22,14 +23,17 @@ public class AppLifecycleTest extends BaseMobileTest {
     @Severity(SeverityLevel.CRITICAL)
     public void cartSurvivesBackground() {
         ProductDetailsPage product = catalog().openProduct(0).addToCart();
-        assertThat(product.header.cartBadgeCount()).isEqualTo(1);
+        verify("cart badge shows 1 before going to background", () ->
+                assertThat(product.header.cartBadgeCount()).isEqualTo(1));
 
         MobileActions.backgroundApp(3);
 
-        assertThat(MobileActions.appState()).as("App state after background")
-                .isEqualTo(AppState.RUNNING_IN_FOREGROUND);
-        assertThat(product.isOpened()).as("Same screen is restored").isTrue();
-        assertThat(product.header.cartBadgeCount()).as("Cart badge after resume").isEqualTo(1);
+        verify("app is back in foreground", () ->
+                assertThat(MobileActions.appState()).isEqualTo(AppState.RUNNING_IN_FOREGROUND));
+        verify("the same product screen is restored", () ->
+                assertThat(product.isOpened()).isTrue());
+        verify("cart badge still shows 1", () ->
+                assertThat(product.header.cartBadgeCount()).isEqualTo(1));
     }
 
     @Test(groups = "regression",
@@ -39,10 +43,13 @@ public class AppLifecycleTest extends BaseMobileTest {
         catalog();
 
         MobileActions.terminateApp();
-        assertThat(MobileActions.appState()).as("State after terminate").isEqualTo(AppState.NOT_RUNNING);
+        verify("app state is NOT_RUNNING", () ->
+                assertThat(MobileActions.appState()).isEqualTo(AppState.NOT_RUNNING));
 
         MobileActions.activateApp();
-        assertThat(MobileActions.appState()).as("State after activate").isEqualTo(AppState.RUNNING_IN_FOREGROUND);
-        assertThat(new CatalogPage().isOpened()).as("Catalog after cold start").isTrue();
+        verify("app state is RUNNING_IN_FOREGROUND", () ->
+                assertThat(MobileActions.appState()).isEqualTo(AppState.RUNNING_IN_FOREGROUND));
+        verify("catalog is shown after cold start", () ->
+                assertThat(new CatalogPage().isOpened()).isTrue());
     }
 }

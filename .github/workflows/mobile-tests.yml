@@ -243,6 +243,21 @@ jobs:
           {"name":"GitHub Actions","type":"github","buildName":"Run #${GITHUB_RUN_NUMBER}","buildUrl":"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}","reportName":"Mobile Tests"}
           EOF
 
+      - name: Add failure categories
+        # Groups failures in the report: app defects vs test code vs CI infrastructure
+        run: |
+          cat > allure-results/categories.json <<'EOF'
+          [
+            {"name": "Product defects (assertion failed)", "matchedStatuses": ["failed"],
+             "messageRegex": ".*(expected|Expecting|Expected|to contain|to be).*"},
+            {"name": "Infrastructure: session / device", "matchedStatuses": ["broken", "failed"],
+             "messageRegex": ".*(SessionNotCreated|Could not start a new session|UiAutomator2|WebDriverAgent|isn't responding|ECONNREFUSED|socket hang up).*"},
+            {"name": "Locator / timing problems", "matchedStatuses": ["broken"],
+             "messageRegex": ".*(NoSuchElement|Element not found|Timeout|TimeoutException|StaleElement|stale).*"},
+            {"name": "Test code errors", "matchedStatuses": ["broken"]}
+          ]
+          EOF
+
       - name: Generate Allure report
         run: |
           curl -fsSL -o allure.tgz "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz"

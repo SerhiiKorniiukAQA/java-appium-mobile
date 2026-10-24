@@ -153,6 +153,7 @@
                     </suiteXmlFiles>
                     <argLine>
                         -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                        -Djava.awt.headless=true
                     </argLine>
                     <systemPropertyVariables>
                         <platform>${platform}</platform>
