@@ -77,10 +77,29 @@ public abstract class BasePage {
         waitVisible(locator).click();
     }
 
+    /**
+     * Types and verifies the result: a loaded iOS simulator sometimes drops characters.
+     * Secure fields show bullets, so only the length is compared there.
+     */
     protected void type(By locator, String text) {
-        WebElement element = waitVisible(locator);
-        element.clear();
-        element.sendKeys(text);
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            WebElement element = waitVisible(locator);
+            element.clear();
+            element.sendKeys(text);
+            if (typedCorrectly(element, text)) {
+                return;
+            }
+        }
+        throw new IllegalStateException("Could not type '" + text + "' into " + locator);
+    }
+
+    private boolean typedCorrectly(WebElement element, String expected) {
+        String actual = DriverManager.isIos() ? element.getAttribute("value") : element.getText();
+        if (actual == null) {
+            return true; // nothing to compare with
+        }
+        boolean masked = !expected.isEmpty() && actual.chars().allMatch(c -> c == '\u2022');
+        return masked ? actual.length() == expected.length() : actual.equals(expected) || expected.isEmpty();
     }
 
     /** Scrolls down until the element is visible, then taps it. Useful for long forms. */
@@ -116,6 +135,20 @@ public abstract class BasePage {
             text = String.join(" ", children.stream().map(WebElement::getText).toList());
         }
         return text == null ? "" : text.trim();
+    }
+
+    /**
+     * CI emulators sometimes show "Pixel Launcher / System UI isn't responding" (ANR).
+     * It belongs to the OS, not to the app under test, so the test presses "Wait" and continues.
+     */
+    protected void dismissSystemNotRespondingDialog() {
+        if (!DriverManager.isAndroid()) {
+            return;
+        }
+        List<WebElement> waitButton = driver.findElements(By.id("android:id/aerr_wait"));
+        if (!waitButton.isEmpty()) {
+            waitButton.get(0).click();
+        }
     }
 
     private static boolean isDisplayedSafe(WebElement element) {

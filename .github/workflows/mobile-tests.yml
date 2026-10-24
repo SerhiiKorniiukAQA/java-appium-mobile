@@ -32,9 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -64,7 +64,7 @@ jobs:
       matrix:
         api-level: [30, 34]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Enable KVM (hardware acceleration for emulator)
         run: |
@@ -72,13 +72,13 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -109,7 +109,10 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: mvn -B test -Pandroid -Dretry.count=${RETRY_COUNT} -Dandroid.udid=emulator-5554
+          # hide_error_dialogs: suppress "... isn't responding" system dialogs on slow CI emulators
+          script: |
+            adb shell settings put global hide_error_dialogs 1
+            mvn -B test -Pandroid -Dretry.count=${RETRY_COUNT} -Dandroid.udid=emulator-5554
 
       - name: Tag Allure results
         if: always()
@@ -136,15 +139,15 @@ jobs:
     runs-on: macos-15-intel
     timeout-minutes: 100
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -161,11 +164,20 @@ jobs:
         run: bash scripts/boot-ios-simulator.sh
 
       - name: Pre-build WebDriverAgent
-        # Building WDA inside the first test session can exceed session timeouts on CI.
-        # Build it once up front; DerivedData is reused by every session.
+        # Building WDA inside the first test session exceeded session timeouts on CI.
+        # Build it once with xcodebuild; sessions then reuse it (usePrebuiltWDA).
         continue-on-error: true
-        timeout-minutes: 30
-        run: appium driver run xcuitest build-wda
+        timeout-minutes: 40
+        run: |
+          WDA_PROJECT="$(find "$HOME/.appium" -maxdepth 8 -name WebDriverAgent.xcodeproj | head -n 1)"
+          echo "WDA project: $WDA_PROJECT"
+          xcodebuild build-for-testing \
+            -project "$WDA_PROJECT" \
+            -scheme WebDriverAgentRunner \
+            -destination "platform=iOS Simulator,id=$IOS_UDID" \
+            -derivedDataPath "$HOME/wda-build" \
+            CODE_SIGNING_ALLOWED=NO -quiet
+          echo "IOS_WDA_DERIVED_DATA=$HOME/wda-build" >> "$GITHUB_ENV"
 
       - name: Resolve Maven dependencies
         run: mvn -B -q test-compile
@@ -210,7 +222,7 @@ jobs:
           merge-multiple: true
           path: allure-results
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}

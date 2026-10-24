@@ -38,7 +38,10 @@ public class CatalogPage extends BasePage {
 
     /** First screen after app launch: cold start on a CI emulator can take a while. */
     public CatalogPage waitOpened() {
-        new WebDriverWait(driver, APP_START_TIMEOUT).until(ExpectedConditions.visibilityOfElementLocated(SCREEN));
+        new WebDriverWait(driver, APP_START_TIMEOUT).until(d -> {
+            dismissSystemNotRespondingDialog();
+            return ExpectedConditions.visibilityOfElementLocated(SCREEN).apply(d);
+        });
         return this;
     }
 

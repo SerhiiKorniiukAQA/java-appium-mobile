@@ -3,6 +3,7 @@ package io.github.serhiikorniiuk.mobile.pages;
 import io.github.serhiikorniiuk.mobile.driver.DriverManager;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -69,7 +70,9 @@ public class AppHeader extends BasePage {
      */
     public int cartBadgeCount() {
         try {
-            return new WebDriverWait(driver, BADGE_UPDATE_TIMEOUT).until(d -> {
+            return new WebDriverWait(driver, BADGE_UPDATE_TIMEOUT)
+                    .ignoring(StaleElementReferenceException.class) // badge is re-rendered on update
+                    .until(d -> {
                 int count = readBadge();
                 return count > 0 ? count : null;
             });
