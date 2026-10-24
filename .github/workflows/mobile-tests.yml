@@ -134,7 +134,7 @@ jobs:
     if: github.event_name != 'workflow_dispatch' || contains(fromJSON('["all","ios"]'), inputs.platform)
     # Intel runner: the demo app simulator build is x86_64
     runs-on: macos-15-intel
-    timeout-minutes: 75
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
 
@@ -159,6 +159,13 @@ jobs:
 
       - name: Boot iPhone simulator
         run: bash scripts/boot-ios-simulator.sh
+
+      - name: Pre-build WebDriverAgent
+        # Building WDA inside the first test session can exceed session timeouts on CI.
+        # Build it once up front; DerivedData is reused by every session.
+        continue-on-error: true
+        timeout-minutes: 30
+        run: appium driver run xcuitest build-wda
 
       - name: Resolve Maven dependencies
         run: mvn -B -q test-compile

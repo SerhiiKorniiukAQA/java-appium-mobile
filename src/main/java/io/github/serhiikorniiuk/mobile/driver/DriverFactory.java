@@ -52,9 +52,9 @@ public final class DriverFactory {
         Config.iosPlatformVersion().ifPresent(options::setPlatformVersion);
         Config.iosUdid().ifPresent(options::setUdid);
         options.setCapability("appium:noReset", false);
-        // First WebDriverAgent build on CI takes several minutes
-        options.setCapability("appium:wdaLaunchTimeout", 300_000);
-        options.setCapability("appium:wdaConnectionTimeout", 300_000);
+        // WebDriverAgent build on a CI macOS runner can take 10+ minutes (pre-built in the workflow)
+        options.setCapability("appium:wdaLaunchTimeout", 900_000);
+        options.setCapability("appium:wdaConnectionTimeout", 900_000);
         options.setCapability("appium:simulatorStartupTimeout", 300_000);
         options.setCapability("appium:useNewWDA", false);
         return options;

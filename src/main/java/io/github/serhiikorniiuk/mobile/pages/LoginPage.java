@@ -1,6 +1,7 @@
 package io.github.serhiikorniiuk.mobile.pages;
 
 import io.github.serhiikorniiuk.mobile.data.User;
+import io.github.serhiikorniiuk.mobile.driver.DriverManager;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -13,6 +14,7 @@ public class LoginPage extends BasePage {
     private static final By USERNAME = id("Username input field");
     private static final By PASSWORD = id("Password input field");
     private static final By LOGIN_BUTTON = id("Login button");
+    private static final By NOT_NOW = id("Not Now");
     private static final By USERNAME_ERROR = id("Username-error-message");
     private static final By PASSWORD_ERROR = id("Password-error-message");
     private static final By GENERIC_ERROR = id("generic-error-message");
@@ -25,6 +27,14 @@ public class LoginPage extends BasePage {
     @Step("Login as {user.username}")
     public void loginAs(User user) {
         submit(user.username(), user.password());
+        dismissSavePasswordPrompt();
+    }
+
+    /** iOS offers to save the password after a successful login; the system sheet blocks the app. */
+    private void dismissSavePasswordPrompt() {
+        if (DriverManager.isIos() && isVisible(NOT_NOW, Duration.ofSeconds(5))) {
+            driver.findElement(NOT_NOW).click();
+        }
     }
 
     @Step("Submit login form: username='{username}'")

@@ -83,7 +83,9 @@ public class AppHeader extends BasePage {
         if (badge.isEmpty()) {
             return 0;
         }
-        String digits = textOf(badge.get(0)).replaceAll("\\D", "");
+        // iOS: the tab's "value" can be stale, the visible count is its "label"
+        String raw = DriverManager.isIos() ? badge.get(0).getAttribute("label") : textOf(badge.get(0));
+        String digits = raw == null ? "" : raw.replaceAll("\\D", "");
         return digits.isEmpty() ? 0 : Integer.parseInt(digits);
     }
 }
