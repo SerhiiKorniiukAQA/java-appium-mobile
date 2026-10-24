@@ -65,7 +65,13 @@ public final class MobileActions {
 
     public static void hideKeyboard() {
         try {
-            driver().executeScript("mobile: hideKeyboard", Map.of());
+            if (DriverManager.isIos()) {
+                // XCUITest closes the keyboard by tapping one of these keys
+                driver().executeScript("mobile: hideKeyboard",
+                        Map.of("keys", java.util.List.of("return", "Return", "done", "Done")));
+            } else {
+                driver().executeScript("mobile: hideKeyboard", Map.of());
+            }
         } catch (RuntimeException ignored) {
             // keyboard is not shown - nothing to hide
         }

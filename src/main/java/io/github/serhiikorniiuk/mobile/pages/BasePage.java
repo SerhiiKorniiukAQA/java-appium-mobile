@@ -47,6 +47,19 @@ public abstract class BasePage {
         return AppiumBy.accessibilityId(accessibilityId);
     }
 
+    /** Same element exposed under different accessibility ids on Android and iOS. */
+    protected static By platformId(String android, String ios) {
+        return id(DriverManager.isIos() ? ios : android);
+    }
+
+    /** All matching elements that are currently on screen (off-screen list items are skipped). */
+    protected List<WebElement> visibleElements(By locator) {
+        return wait.until(d -> {
+            List<WebElement> visible = d.findElements(locator).stream().filter(BasePage::isDisplayedSafe).toList();
+            return visible.isEmpty() ? null : visible;
+        });
+    }
+
     protected WebElement waitVisible(By locator) {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
     }

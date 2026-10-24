@@ -5,8 +5,8 @@ import org.openqa.selenium.By;
 public class GeoLocationPage extends BasePage {
 
     private static final By SCREEN = id("geo location screen");
-    private static final By LATITUDE = id("latitude");
-    private static final By LONGITUDE = id("longitude");
+    private static final By LATITUDE = id("latitude data");
+    private static final By LONGITUDE = id("longitude data");
 
     @Override
     protected By screenLocator() {

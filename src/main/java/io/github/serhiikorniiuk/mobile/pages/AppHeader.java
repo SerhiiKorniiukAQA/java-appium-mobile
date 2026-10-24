@@ -1,21 +1,29 @@
 package io.github.serhiikorniiuk.mobile.pages;
 
+import io.github.serhiikorniiuk.mobile.driver.DriverManager;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.util.List;
 
-/** Header / navigation that is shared by all screens: burger menu and cart icon. */
+/**
+ * Navigation shared by all screens. This is where the platforms really differ:
+ * <ul>
+ *     <li>Android: burger menu ("open menu") in the header and a cart icon with a badge ("cart badge")</li>
+ *     <li>iOS: bottom tab bar ("tab bar option menu" / "tab bar option cart"), cart count is the tab label</li>
+ * </ul>
+ */
 public class AppHeader extends BasePage {
 
-    private static final By MENU = id("open menu");
+    private static final By MENU = platformId("open menu", "tab bar option menu");
+    private static final By CART = platformId("cart badge", "tab bar option cart");
+    private static final By CATALOG = platformId("menu item catalog", "tab bar option catalog");
     private static final By MENU_LOGIN = id("menu item log in");
     private static final By MENU_LOGOUT = id("menu item log out");
-    private static final By MENU_CATALOG = id("menu item catalog");
-    private static final By CART = id("tab bar option cart");
-    private static final By CART_BADGE = id("cart badge");
+    private static final Duration BADGE_UPDATE_TIMEOUT = Duration.ofSeconds(5);
 
     @Override
     protected By screenLocator() {
@@ -35,10 +43,12 @@ public class AppHeader extends BasePage {
         return new LoginPage();
     }
 
-    @Step("Open catalog from menu")
+    @Step("Open catalog")
     public CatalogPage openCatalog() {
-        openMenu();
-        tap(MENU_CATALOG);
+        if (DriverManager.isAndroid()) {
+            openMenu();
+        }
+        tap(CATALOG);
         return new CatalogPage();
     }
 
@@ -53,13 +63,27 @@ public class AppHeader extends BasePage {
         return new CartPage();
     }
 
-    /** Number shown on the cart icon, 0 when badge is hidden. */
+    /**
+     * Number shown on the cart icon/tab, 0 when there is no badge.
+     * The badge is updated asynchronously after "Add To Cart", so a zero value is re-checked for a few seconds.
+     */
     public int cartBadgeCount() {
-        List<WebElement> badge = driver.findElements(CART_BADGE);
+        try {
+            return new WebDriverWait(driver, BADGE_UPDATE_TIMEOUT).until(d -> {
+                int count = readBadge();
+                return count > 0 ? count : null;
+            });
+        } catch (org.openqa.selenium.TimeoutException e) {
+            return 0;
+        }
+    }
+
+    private int readBadge() {
+        List<WebElement> badge = driver.findElements(CART);
         if (badge.isEmpty()) {
             return 0;
         }
-        String text = textOf(badge.get(0)).replaceAll("\\D", "");
-        return text.isEmpty() ? 0 : Integer.parseInt(text);
+        String digits = textOf(badge.get(0)).replaceAll("\\D", "");
+        return digits.isEmpty() ? 0 : Integer.parseInt(digits);
     }
 }

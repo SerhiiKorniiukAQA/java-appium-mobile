@@ -1,9 +1,9 @@
 package io.github.serhiikorniiuk.mobile.pages;
 
 import io.github.serhiikorniiuk.mobile.data.User;
-import io.github.serhiikorniiuk.mobile.utils.MobileActions;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
@@ -31,8 +31,7 @@ public class LoginPage extends BasePage {
     public LoginPage submit(String username, String password) {
         type(USERNAME, username);
         type(PASSWORD, password);
-        MobileActions.hideKeyboard();
-        tap(LOGIN_BUTTON);
+        scrollAndTap(LOGIN_BUTTON); // hides keyboard first: on iOS it covers the button
         return this;
     }
 
@@ -48,13 +47,25 @@ public class LoginPage extends BasePage {
         return textOf(GENERIC_ERROR);
     }
 
-    /** Any validation message currently shown on the form. */
+    /**
+     * The validation message shown on the form. All three error containers are always
+     * rendered (empty), so the first one that actually has text is returned.
+     */
     public String anyError() {
-        for (By locator : new By[]{USERNAME_ERROR, PASSWORD_ERROR, GENERIC_ERROR}) {
-            if (isVisible(locator, Duration.ofSeconds(3))) {
-                return textOf(locator);
-            }
+        try {
+            return new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> {
+                for (By locator : new By[]{USERNAME_ERROR, PASSWORD_ERROR, GENERIC_ERROR}) {
+                    for (var element : d.findElements(locator)) {
+                        String text = textOf(element);
+                        if (!text.isBlank()) {
+                            return text;
+                        }
+                    }
+                }
+                return null;
+            });
+        } catch (org.openqa.selenium.TimeoutException e) {
+            return "";
         }
-        return "";
     }
 }
